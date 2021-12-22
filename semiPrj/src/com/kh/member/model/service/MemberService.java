@@ -2,6 +2,8 @@ package com.kh.member.model.service;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.kh.common.JDBCTemplate.*;
 
@@ -58,12 +60,62 @@ public class MemberService {
 		} else {
 			return null;
 		}
-		
-		
 	}
-	
 	public MemberVo selectMember(Connection conn, MemberVo m) {
 		return new MemberDao().selectMember(conn, m);
 	}
+
+//--------------------------------------------------------------------------------------	
+	
+	public List<MemberVo> search(String type, String value) {
+		
+		Connection conn = getConnection();
+		List<MemberVo> memberList;
+		
+		if(type == null || value == null) {
+			memberList = selectMemberAll(conn);
+		} else {
+			memberList = selectMemberBySearch(conn, type, value);
+		}
+		
+		close(conn);
+		
+		return memberList;
+	}
+	public List<MemberVo> selectMemberAll(Connection conn) {
+		
+		return new MemberDao().selectMemberAll(conn);
+	}
+
+	private List<MemberVo> selectMemberBySearch(Connection conn, String type, String value) {
+		
+		return new MemberDao().selectMemberBySearch(conn, type, value);
+	}
+//---------------------------------------------------------------------------------------
+	public int dupCheck(String id) {
+		
+		// 여러 쿼리들을 사용해서 DB에 접근하게 될 때 트랜잭션 관리를 위해 커넥션 연결을 Service에서 진행한다.
+		// 여러 쿼리들을 하나의 트랜잭션으로 중간에 오류가생기면 롤백, 잘 성공하면 커밋을 한꺼번에 해주기 위해서이다.
+		Connection conn = getConnection();
+		
+		int result = 0;
+		try {
+			result = selectMemberById(conn, id);
+			commit(conn);
+		} catch (SQLException e) {
+			rollback(conn);
+			e.printStackTrace();
+		} finally {
+			close(conn);			
+		}
+		
+		return result;
+	}
+
+	private int selectMemberById(Connection conn, String id) throws SQLException {
+	
+		return new MemberDao().selectMemberById(conn, id);
+	}
+
 
 }

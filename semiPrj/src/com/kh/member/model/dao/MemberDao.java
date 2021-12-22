@@ -7,6 +7,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.kh.member.model.vo.MemberVo;
 
@@ -77,6 +79,128 @@ public class MemberDao {
 		}
 		
 		return selectedMember;
+	}
+
+	public List<MemberVo> selectMemberAll(Connection conn) {
+		
+		String sql = "SELECT * FROM MEMBER WHERE QUIT_YN = 'N' AND OPEN_YN = 'Y'";
+		
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		MemberVo selectedMember = null;
+		List<MemberVo> list = new ArrayList<MemberVo>();
+		
+		try {
+			pstmt = conn.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			
+			while(rs.next()) {
+				int memberNo = rs.getInt("MEMBER_NO");
+				String id = rs.getString("ID");
+				String pwd = rs.getString("PWD");
+				String name = rs.getString("NAME");
+				int detail = rs.getInt("DETAIL");
+				Timestamp enrollDate = rs.getTimestamp("ENROLL_DATE");
+				Timestamp modifyDate = rs.getTimestamp("MODIFY_DATE");
+				String openYn = rs.getString("OPEN_YN");
+				
+				selectedMember = new MemberVo();
+				
+				selectedMember.setMemberNo(memberNo);
+				selectedMember.setId(id);
+				selectedMember.setPwd(pwd);
+				selectedMember.setName(name);
+				selectedMember.setDetail(detail);
+				selectedMember.setEnrollDate(enrollDate);
+				selectedMember.setModifyDate(modifyDate);
+				selectedMember.setOpenYn(openYn);
+				
+				list.add(selectedMember);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			close(pstmt);
+			close(rs);
+		}
+				
+		return list;
+	}
+//--------------------------------------------------------------------------
+	public int selectMemberById(Connection conn, String id) throws SQLException {
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		int result = 0;
+		
+		String sql = "SELECT COUNT(*) FROM MEMBER WHERE ID = ?";
+		
+		try {
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, id);
+			
+			rs = pstmt.executeQuery();
+			rs.next();
+			result = rs.getInt(1);
+			
+		} finally {
+			close(pstmt);
+			close(rs);
+		}
+		
+		return result;
+	}
+//---------------------------------------------------------------------------------
+	public List<MemberVo> selectMemberBySearch(Connection conn, String type, String value) {
+		
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		List<MemberVo> list = new ArrayList<>();
+		
+		String sql = "SELECT * FROM MEMBER WHERE %s LIKE ?";
+		sql = String.format(sql, type); // type을 setString으로 그냥 넣으면 
+		System.out.println("SQL ::: " + sql);
+		System.out.println(value);
+		
+		try {
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, "%" + value + "%");
+			
+			rs = pstmt.executeQuery();
+			
+			MemberVo selectedMember = null;
+			
+			while(rs.next()) {
+				
+				int memberNo = rs.getInt("MEMBER_NO");
+				String id = rs.getString("ID");
+				String pwd = rs.getString("PWD");
+				String name = rs.getString("NAME");
+				int detail = rs.getInt("DETAIL");
+				Timestamp enrollDate = rs.getTimestamp("ENROLL_DATE");
+				Timestamp modifyDate = rs.getTimestamp("MODIFY_DATE");
+				String openYn = rs.getString("OPEN_YN");
+				
+				selectedMember = new MemberVo();
+				
+				selectedMember.setMemberNo(memberNo);
+				selectedMember.setId(id);
+				selectedMember.setPwd(pwd);
+				selectedMember.setName(name);
+				selectedMember.setDetail(detail);
+				selectedMember.setEnrollDate(enrollDate);
+				selectedMember.setModifyDate(modifyDate);
+				selectedMember.setOpenYn(openYn);
+				
+				list.add(selectedMember);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			close(pstmt);
+			close(rs);
+		}
+		
+		return list;
 	}
 
 }
