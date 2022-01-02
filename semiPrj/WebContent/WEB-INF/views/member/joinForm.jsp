@@ -19,13 +19,15 @@
     <%@ include file="/WEB-INF/views/common/header.jsp"%>
     
     <div id="div-main">
-        <form action="join" method="post" onsubmit=check()>
+        <form action="join" method="post" enctype="multipart/form-data" onsubmit=check()>
         	<input type="hidden" value="false"> <!-- 아이디가 중복인 상태로 회원가입을 눌렀을때 check 펑션의 기준이 되게 하는 것, value를 기준으로 -->
             <label>아이디   : </label> <input type="text" name="id" id="idBox"><button type="button" id="dupCheck">중복확인</button>
             <br>
             <label>비밀번호 : </label> <input type="text" name="pwd">
             <br>
             <label>이름 : </label> <input type="text" name="name">
+            <br>
+            <label>프로필사진 : </label> <input type="file" name="profile">
             <br>
             <input type="submit" value="가입하기">
         </form>
