@@ -54,7 +54,14 @@
 			</tr>
 			</c:forEach>
 		</table>
+		
+		<c:forEach var="i" begin="${startPage}" end="${endPage}" step="1">
+			<div class="page-area">
+				<c:if test="${i le maxPage}">
+					<a href="search?currentPage=${i}">${i}</a>
+				</c:if>
+			</div>
+		</c:forEach>
 	</div>
-	
 </body>
 </html>

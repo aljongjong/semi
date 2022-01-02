@@ -1,5 +1,7 @@
 package com.kh.member.model.service;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -12,7 +14,32 @@ import com.kh.member.model.vo.MemberVo;
 
 public class MemberService {
 
+	// 패스워드 받아서 암호화시켜서 리턴하는 메소드
+	private String encrypt(String pwd) {
+		
+		// 패스워드 암호화 
+		MessageDigest md;
+		StringBuilder sb = new StringBuilder();
+		try {
+			md = MessageDigest.getInstance("SHA-512"); // SHA-512 암호화 알고리즘 사용
+			md.update(pwd.getBytes());
+			byte[] digest = md.digest();
+			
+			for(byte b : digest) { // ex) 23, -15, 11, 8, 12..
+				sb.append(String.format("%02x", b));  // 위 숫자 바이트 배열을 문자열 포맷화
+			}
+			
+		} catch (NoSuchAlgorithmException e1) {
+			e1.printStackTrace();
+		} 
+		return sb.toString();
+	}
+	
 	public int join(MemberVo m) {
+		
+		// 암호화한 패스워드로 DB에 저장하기 위해 암호화된 패스워드로 변경
+		m.setPwd(encrypt(m.getPwd()));
+		
 		
 		// DB Connection 가져오기
 		Connection conn = getConnection();
@@ -21,6 +48,7 @@ public class MemberService {
 		int result = 0;
 		try {
 			result = insertMember(conn, m);
+			
 			if(result>0)
 				commit(conn);
 			else
@@ -54,8 +82,8 @@ public class MemberService {
 		
 		close(conn);
 		
-		// 가져온 pwd 랑 사용자 입력 pwd랑 같은지 비교하고 그 Member정보 리턴
-		if(selectedMember.getPwd().equals(m.getPwd())) {
+		// 가져온 pwd 랑 사용자 입력 pwd랑 같은지 비교하고 그 Member정보 리턴 (암호화해줌)
+		if(selectedMember.getPwd().equals(encrypt(m.getPwd()))) {
 			return selectedMember;
 		} else {
 			return null;
@@ -67,13 +95,33 @@ public class MemberService {
 
 //--------------------------------------------------------------------------------------	
 	
-	public List<MemberVo> search(String type, String value) {
+	public List<MemberVo> search(String type, String value, String currentPage) {
 		
 		Connection conn = getConnection();
+		
+		
+		int totalBoardCount = countMemberAll(conn); // 총 회원 수
+		int pageLimit = 5; // 페이징 목록 최대 개수
+		int boardLimit = 5; // 한 페이지당 게시글 수 // 드랍 박스 이용해서 사용자가 개수 정할 수 있도록 구현
+		int maxPage = 0; // 마지막 페이지
+		
+		maxPage = totalBoardCount / boardLimit;
+		if(totalBoardCount % boardLimit != 0) {
+			maxPage++;
+		}
+		System.out.println("maxPage : " + maxPage);
+		
+		// (currentPage * boardLimit) - boardLimit + 1 ~ currentPage * boardLimit
+		int p = Integer.parseInt(currentPage);
+		int endNo = p * boardLimit;
+		int startNo = endNo - boardLimit + 1;
+		
+		
+		
 		List<MemberVo> memberList;
 		
 		if(type == null || value == null) {
-			memberList = selectMemberAll(conn);
+			memberList = selectMemberAll(conn, currentPage, startNo, endNo);
 		} else {
 			memberList = selectMemberBySearch(conn, type, value);
 		}
@@ -82,9 +130,14 @@ public class MemberService {
 		
 		return memberList;
 	}
-	public List<MemberVo> selectMemberAll(Connection conn) {
+	private int countMemberAll(Connection conn) {
 		
-		return new MemberDao().selectMemberAll(conn);
+		return new MemberDao().countMemberAll(conn);
+	}
+
+	public List<MemberVo> selectMemberAll(Connection conn, String currentPage, int startNo, int endNo) {
+		
+		return new MemberDao().selectMemberAll(conn, startNo, endNo);
 	}
 
 	private List<MemberVo> selectMemberBySearch(Connection conn, String type, String value) {

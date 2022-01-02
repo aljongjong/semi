@@ -81,9 +81,13 @@ public class MemberDao {
 		return selectedMember;
 	}
 
-	public List<MemberVo> selectMemberAll(Connection conn) {
+	public List<MemberVo> selectMemberAll(Connection conn, int startNo, int endNo) {
 		
-		String sql = "SELECT * FROM MEMBER WHERE QUIT_YN = 'N' AND OPEN_YN = 'Y'";
+		String sql = "SELECT * "
+				+ "FROM ( "
+				+ "SELECT ROWNUM AS RNUM , m.* FROM MEMBER m WHERE QUIT_YN = 'N' AND OPEN_YN = 'Y' "
+				+ ") "
+				+ "WHERE RNUM BETWEEN ? AND ?";
 		
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
@@ -92,6 +96,8 @@ public class MemberDao {
 		
 		try {
 			pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(1, startNo);
+			pstmt.setInt(2, endNo);
 			rs = pstmt.executeQuery();
 			
 			while(rs.next()) {
@@ -142,6 +148,31 @@ public class MemberDao {
 			rs.next();
 			result = rs.getInt(1);
 			
+		} finally {
+			close(pstmt);
+			close(rs);
+		}
+		
+		return result;
+	}
+	
+	public int countMemberAll(Connection conn) {
+		
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		int result = 0;
+		
+		String sql = "SELECT COUNT(MEMBER_NO) FROM MEMBER WHERE OPEN_YN = 'Y' AND QUIT_YN = 'N'";
+		
+		try {
+			pstmt = conn.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			
+			if(rs.next()) {
+				result = rs.getInt(1);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
 		} finally {
 			close(pstmt);
 			close(rs);
@@ -202,5 +233,7 @@ public class MemberDao {
 		
 		return list;
 	}
+
+	
 
 }

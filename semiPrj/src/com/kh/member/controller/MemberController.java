@@ -22,19 +22,27 @@ public class MemberController extends HttpServlet {
 		String type = req.getParameter("searchType");
 		String value = req.getParameter("searchValue");
 		String currentPage = req.getParameter("currentPage");
+		if(currentPage == null) currentPage="1";
 		
 		System.out.println(type);
 		System.out.println(value);
+		System.out.println("currentPage : " + currentPage);
 //-------------------------------------------------------------------
+		int maxPage = 4;
+		req.setAttribute("maxPage", maxPage);
 		
-		List<MemberVo> memberList = new MemberService().search(type, value);
+		int startPage = Integer.parseInt(currentPage) - 2;
+		if(startPage < 0); startPage = 1;
+		int endPage = startPage + 5;
+		req.setAttribute("startPage", startPage);
+		req.setAttribute("endPage", endPage);
+		
+		
+		List<MemberVo> memberList = new MemberService().search(type, value, currentPage);
 		
 		req.setAttribute("memberList", memberList);
 		
 		req.getRequestDispatcher("/WEB-INF/views/member/searchAllUser.jsp").forward(req, resp);
-		
-
-		
 		
 	}
 }
